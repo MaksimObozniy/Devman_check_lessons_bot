@@ -7,7 +7,6 @@ import requests
 from requests.exceptions import ReadTimeout, ConnectionError
 from dotenv import load_dotenv
 
-load_dotenv()
 
 
 async def main(tg_bot_token, tg_chat_id, api_devman):
@@ -60,6 +59,9 @@ async def main(tg_bot_token, tg_chat_id, api_devman):
 
 
 if __name__ == "__main__":
+
+    load_dotenv()
+
     tg_chat_id = os.environ.get("TG_CHAT_ID")
     api_devman = os.environ.get("API_DEVMAN")
     tg_bot_token = os.environ.get("TG_BOT_API_TOKEN")

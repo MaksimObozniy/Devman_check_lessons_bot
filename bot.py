@@ -1,48 +1,57 @@
 import os
 import time
 
-import asyncio
-import telegram
+from telegram import Bot
 import requests
 from requests.exceptions import ReadTimeout, ConnectionError
 from dotenv import load_dotenv
 
 
+def main():
 
-async def main(tg_bot_token, tg_chat_id, api_devman):
-    bot = telegram.Bot(token=tg_bot_token)
+    load_dotenv()
+
+    tg_chat_id = os.environ["TG_CHAT_ID"]
+    lesson_api = os.environ["LESSON_API"]
+    tg_bot_token = os.environ["TG_BOT_API_TOKEN"]
+
+    bot = Bot(token=tg_bot_token)
 
     reviews_url = "https://dvmn.org/api/long_polling/"
-
-    headers ={
-        "Authorization":f"Token {api_devman}"
-        }
-
+    headers ={"Authorization":f"Token {lesson_api}"}
     timestamp = None
+
     while True:
         try:
             params = {"timestamp": timestamp} if timestamp else {}
-            response = requests.get(reviews_url, headers=headers, params=params, timeout=90)
+            response = requests.get(reviews_url, headers=headers, params=params, timeout=60)
             response.raise_for_status()
 
             review_info = response.json()
-            print(review_info)
 
             if review_info['status'] == 'found':
                 for attempt in review_info['new_attempts']:
-                    if attempt['is_negative'] == True:
-                        await bot.send_message(
+                    lesson_title = attempt['lesson_title']
+                    lesson_url = attempt['lesson_url']
+
+                    if attempt['is_negative']:
+                        bot.send_message(
                             chat_id=tg_chat_id,
-                            text=f"""У вас проверили работу '{review_info['new_attempts'][0]['lesson_title']}'!
-                            \nК сожалению в работе нашлись ошибки.
-                            \nСсылка на работу:\n{review_info['new_attempts'][0]['lesson_url']}""",
+                            text=(
+                                f"У вас проверили работу «{lesson_title}»!\n"
+                                f"К сожалению, в работе нашлись ошибки.\n"
+                                f"Ссылка на работу: {lesson_url}"
+                            )
                         )
+
                     else:
-                        await bot.send_message(
+                        bot.send_message(
                             chat_id=tg_chat_id,
-                            text=f"""У вас проверили работу '{review_info['new_attempts'][0]['lesson_title']}'!
-                            \nПреподавателю все понравилось, можно приступать к следующему уроку!
-                            \nСсылка на работу:\n{review_info['new_attempts'][0]['lesson_url']}""",
+                            text=(
+                                f"У вас проверили работу «{lesson_title}»!\n"
+                                f"Преподавателю всё понравилось, можно приступать к следующему уроку!\n"
+                                f"Ссылка на работу: {lesson_url}"
+                            )
                         )
 
                 timestamp = review_info["last_attempt_timestamp"]
@@ -51,23 +60,12 @@ async def main(tg_bot_token, tg_chat_id, api_devman):
                 timestamp = review_info["timestamp"]
 
         except ReadTimeout:
-            print("Проверенных работ пока нет.")
+            continue
 
         except ConnectionError as e:
-            print("Сервер не отвечает: ", e)
             time.sleep(10)
 
 
 if __name__ == "__main__":
-
-    load_dotenv()
-
-    tg_chat_id = os.environ.get("TG_CHAT_ID")
-    api_devman = os.environ.get("API_DEVMAN")
-    tg_bot_token = os.environ.get("TG_BOT_API_TOKEN")
-
-    if tg_bot_token == None:
-        print("Не удается получить токен.")
-    else:
-        asyncio.run(main(tg_bot_token, tg_chat_id, api_devman))
+    main()
 

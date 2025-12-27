@@ -8,8 +8,14 @@ from requests.exceptions import ReadTimeout, ConnectionError
 from dotenv import load_dotenv
 
 
+class TelegramLogsHandler(logging.Handler):
+    def emit(self, record):
+        log_message = self.format(record)
+        bot.message(chat_id=tg_chat_id, text=log_message)
+
+
 def main():
-    logging.info("Бот запущен")
+    global bot, tg_chat_id
 
     load_dotenv()
 
@@ -18,6 +24,14 @@ def main():
     tg_bot_token = os.environ["TG_BOT_API_TOKEN"]
 
     bot = Bot(token=tg_bot_token)
+    
+    telegram_handler = TelegramLogsHandler()
+    telegram_handler.setLevel(logging.ERROR)
+    telegram_handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+    
+    logging.getLogger().addHandler(telegram_handler)
+    
+    logging.info("Бот запущен")
 
     reviews_url = "https://dvmn.org/api/long_polling/"
     headers ={"Authorization":f"Token {lesson_api}"}

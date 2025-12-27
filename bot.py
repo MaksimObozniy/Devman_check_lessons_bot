@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 class TelegramLogsHandler(logging.Handler):
     def emit(self, record):
         log_message = self.format(record)
-        bot.message(chat_id=tg_chat_id, text=log_message)
+        bot.send_message(chat_id=tg_chat_id, text=log_message)
 
 
 def main():
@@ -26,11 +26,12 @@ def main():
     bot = Bot(token=tg_bot_token)
     
     telegram_handler = TelegramLogsHandler()
-    telegram_handler.setLevel(logging.ERROR)
-    telegram_handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
-    
+    telegram_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(message)s")
+    telegram_handler.setFormatter(formatter)
+
     logging.getLogger().addHandler(telegram_handler)
-    
+    logging.getLogger("telegram").setLevel(logging.WARNING)
     logging.info("Бот запущен")
 
     reviews_url = "https://dvmn.org/api/long_polling/"
@@ -87,5 +88,8 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s — %(levelname)s — %(message)s",
     )
-    main()
-
+    try:
+        main()
+    except Exception:
+        logging.exception("Бот упал с ошибкой :")
+        raise

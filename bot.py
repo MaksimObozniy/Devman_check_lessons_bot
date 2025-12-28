@@ -11,23 +11,25 @@ from dotenv import load_dotenv
 class TelegramLogsHandler(logging.Handler):
     def emit(self, record):
         log_message = self.format(record)
-        bot.send_message(chat_id=tg_chat_id, text=log_message)
+        logs_bot.send_message(chat_id=tg_chat_id, text=log_message)
 
 
 def main():
-    global bot, tg_chat_id
+    global logs_bot, tg_chat_id
 
     load_dotenv()
 
     tg_chat_id = os.environ["TG_CHAT_ID"]
     lesson_api = os.environ["LESSON_API"]
-    tg_bot_token = os.environ["TG_BOT_API_TOKEN"]
+    main_tg_bot_api = os.environ["MAIN_TG_BOT_API"]
+    logger_tg_bot_api = os.environ["LOGGER_TG_BOT_API"]
 
-    bot = Bot(token=tg_bot_token)
+    main_bot = Bot(token=main_tg_bot_api)
+    logs_bot = Bot(token=logger_tg_bot_api)
     
     telegram_handler = TelegramLogsHandler()
     telegram_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(message)s")
+    formatter = logging.Formatter(format="%(asctime)s — %(levelname)s — %(message)s")
     telegram_handler.setFormatter(formatter)
 
     logging.getLogger().addHandler(telegram_handler)
@@ -52,7 +54,7 @@ def main():
                     lesson_url = attempt['lesson_url']
 
                     if attempt['is_negative']:
-                        bot.send_message(
+                        main_bot.send_message(
                             chat_id=tg_chat_id,
                             text=(
                                 f"У вас проверили работу «{lesson_title}»!\n"
@@ -62,7 +64,7 @@ def main():
                         )
 
                     else:
-                        bot.send_message(
+                        main_bot.send_message(
                             chat_id=tg_chat_id,
                             text=(
                                 f"У вас проверили работу «{lesson_title}»!\n"

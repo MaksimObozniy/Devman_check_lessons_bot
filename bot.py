@@ -29,7 +29,7 @@ def main():
     
     telegram_handler = TelegramLogsHandler()
     telegram_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter(format="%(asctime)s — %(levelname)s — %(message)s")
+    formatter = logging.Formatter("%(asctime)s — %(levelname)s — %(message)s",)
     telegram_handler.setFormatter(formatter)
 
     logging.getLogger().addHandler(telegram_handler)
